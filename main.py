@@ -19,13 +19,12 @@ folders = {
     'documents': ('.doc', '.docx', '.txt', '.pdf', '.xlsx', '.pptx'),
     'audio': ('.mp3', '.ogg', '.wav', '.amr'),
     'archives': ('.zip', '.gz', '.tar'),
-    'unknown': (),
 }
 
 categorized_files = {'images': [], 'audio': [], 'video': [], 'documents': [], 'archives': [], 'unknown': []}
 
-known_extensions = []
-unknown_extensions = []
+known_extensions = set()
+unknown_extensions = set()
 
 
 def is_directory(path):
@@ -57,7 +56,7 @@ def sort(path):
     os.chdir(path)
 
     for name in folders.keys():
-        if name != 'unknown':
+        if not os.path.exists(name):
             os.mkdir(name)
 
     for root, dirs, files in os.walk(path):
@@ -72,21 +71,21 @@ def sort(path):
                     if file_extension in extension:
                         normalized_file_root = normalize(file_root)
                         new_file_name = f'{normalized_file_root}{file_extension}'
-                        known_extensions.append(file_extension)
+                        known_extensions.add(file_extension)
                         flag = False
 
                         if folder == 'archives':
                             shutil.unpack_archive(file, f'{normalized_file_root}')
                             categorized_files[folder].append(normalized_file_root)
-                            shutil.move(normalized_file_root, f'{folder}/{normalized_file_root}')
+                            shutil.move(normalized_file_root, os.path.join(folder, normalized_file_root))
                             os.remove(file)
 
                         elif file != new_file_name:
                             categorized_files[folder].append(new_file_name)
-                            shutil.move(file, f'{folder}/{new_file_name}')
+                            shutil.move(file, os.path.join(folder, new_file_name))
 
                 if flag:
-                    unknown_extensions.append(file_extension)
+                    unknown_extensions.add(file_extension)
                     categorized_files['unknown'].append(file)
 
             for dir in dirs:
