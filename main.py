@@ -61,7 +61,6 @@ def sort(path):
 
     for root, dirs, files in os.walk(path):
         if not 'images' in str(root) and not 'video' in str(root) and not 'documents' in str(root) and not 'audio' in str(root) and not 'archives' in str(root):
-
             for file in files:
 
                 flag = True
@@ -75,12 +74,18 @@ def sort(path):
                         flag = False
 
                         if folder == 'archives':
-                            shutil.unpack_archive(file, f'{normalized_file_root}')
-                            categorized_files[folder].append(normalized_file_root)
-                            shutil.move(normalized_file_root, os.path.join(folder, normalized_file_root))
-                            os.remove(file)
+                            is_unpacked = False
+                            try:
+                                shutil.unpack_archive(file, f'{normalized_file_root}')
+                                is_unpacked = True
+                            except shutil.ReadError as e:
+                                print(f"Error: {e}")
+                            if is_unpacked:
+                                categorized_files[folder].append(normalized_file_root)
+                                shutil.move(normalized_file_root, os.path.join(folder, normalized_file_root))
+                                os.remove(file)
 
-                        elif file != new_file_name:
+                        else:
                             categorized_files[folder].append(new_file_name)
                             shutil.move(file, os.path.join(folder, new_file_name))
 
@@ -92,14 +97,15 @@ def sort(path):
                 if dir != 'images' and dir != 'video' and dir != 'archives' and dir != 'audio' and dir != 'documents':
                     try:
                         os.rmdir(dir)
-                        #print(f'Directory {dir} has been removed successfully')
+                        print(f'Directory {dir} has been removed successfully')
                     except OSError as error:
                         print(f'Directory {dir} can not be removed')
-
                     if os.path.exists(dir):
                         normalized_dir = normalize(dir)
                         os.rename(dir, normalized_dir)
                         sort(os.path.join(root, normalized_dir))
+
+            return os.chdir(os.path.dirname(root))
 
 
 
